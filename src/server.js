@@ -4,10 +4,11 @@ import express from 'express';
 import fs from 'node:fs';
 import { sendText, markRead, validSignature } from './whatsapp.js';
 import { answer } from './agent.js';
+import { veriAl, bekleyenleriAl } from './data.js';
 
 const USERS = JSON.parse(fs.readFileSync(process.env.USERS_FILE || './users.json', 'utf8'));
 const app = express();
-app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
+app.use(express.json({ limit: '5mb', verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
 // 1) Meta webhook doğrulaması (kurulumda bir kez)
 app.get('/webhook', (req, res) => {
@@ -86,6 +87,16 @@ app.get('/teshis', async (req, res) => {
   const waba = req.query.waba ? await get(req.query.waba + '/subscribed_apps') : null;
   res.json({ phone, waba });
 });
+
+// Atlas görevi (Taha'nın bilgisayarında, IRIS/Mantis açıkken) veriyi buraya gönderir
+app.use('/veri', (req, res, next) => {
+  res.set({ 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Atlas-Key', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' });
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  if (!process.env.INGEST_KEY || req.get('X-Atlas-Key') !== process.env.INGEST_KEY) return res.sendStatus(403);
+  next();
+});
+app.post('/veri', (req, res) => res.json(veriAl(req.body || {})));
+app.get('/veri/bekleyen', (_req, res) => res.json(bekleyenleriAl()));
 
 app.get('/health', (_req, res) => res.send('ok'));
 
