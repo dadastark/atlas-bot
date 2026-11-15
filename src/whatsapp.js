@@ -24,7 +24,8 @@ export async function sendText(to, body) {
       body: JSON.stringify({
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
-        to,
+        // BSUID (ör. TR.123...) ise 'recipient', telefon numarasıysa 'to' kullanılır
+        ...(/^[A-Z]{2}\./.test(String(to)) ? { recipient: to } : { to }),
         type: 'text',
         text: { preview_url: false, body: p },
       }),
