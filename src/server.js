@@ -72,4 +72,19 @@ async function handle(msg) {
 }
 
 app.get('/health', (_req, res) => res.send('ok'));
+
+// Meta'nın istediği gizlilik politikası sayfası
+app.get(['/gizlilik', '/privacy'], (_req, res) => res.type('html').send(`<!doctype html><html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Atlas – Gizlilik Politikası</title>
+<body style="font-family:system-ui,sans-serif;max-width:720px;margin:40px auto;padding:0 16px;line-height:1.6">
+<h1>Atlas – Gizlilik Politikası</h1>
+<p>Atlas, 3M Digital çağrı merkezi ekibinin iç kullanımı için çalışan bir WhatsApp asistanıdır. Yalnızca yetkilendirilmiş ekip üyeleriyle yazışır.</p>
+<h2>Toplanan veriler</h2>
+<p>Bota gönderilen mesaj metni, gönderenin WhatsApp numarası ve mesaj zamanı. Bu veriler yalnızca soruya cevap vermek için kullanılır.</p>
+<h2>Kullanım ve paylaşım</h2>
+<p>Mesajlar cevap üretmek için WhatsApp Cloud API (Meta) ve yapay zekâ hizmet sağlayıcısı (Anthropic) üzerinden işlenir. Veriler satılmaz, reklam amacıyla kullanılmaz ve üçüncü kişilerle paylaşılmaz.</p>
+<h2>Saklama</h2>
+<p>Sohbet geçmişi yalnızca sunucu belleğinde kısa süreli tutulur; sunucu yeniden başladığında silinir. Kalıcı bir mesaj arşivi tutulmaz.</p>
+<h2>Haklarınız ve iletişim</h2>
+<p>Verilerinizle ilgili soru veya silme talepleriniz için 3M Digital yönetimiyle iletişime geçebilirsiniz.</p>
+<p><small>Son güncelleme: 15 Kasım 2026</small></p></body></html>`));
 app.listen(process.env.PORT || 3000, () => console.log('Atlas dinlemede:', process.env.PORT || 3000));
