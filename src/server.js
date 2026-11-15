@@ -72,6 +72,17 @@ async function handle(msg) {
   busy.set(phone, tail);
 }
 
+// Teşhis: Meta tarafındaki numara ve abonelik durumunu gösterir (token gösterilmez)
+app.get('/teshis', async (req, res) => {
+  if (req.query.k !== process.env.WA_VERIFY_TOKEN) return res.sendStatus(403);
+  const v = process.env.WA_API_VERSION || 'v26.0';
+  const H = { Authorization: 'Bearer ' + process.env.WA_ACCESS_TOKEN };
+  const get = async (p) => { try { return await (await fetch('https://graph.facebook.com/' + v + '/' + p, { headers: H })).json(); } catch (e) { return { hata: e.message }; } };
+  const phone = await get(process.env.WA_PHONE_NUMBER_ID + '?fields=display_phone_number,verified_name,name_status,status,code_verification_status,quality_rating,platform_type,webhook_configuration');
+  const waba = req.query.waba ? await get(req.query.waba + '/subscribed_apps') : null;
+  res.json({ phone, waba });
+});
+
 app.get('/health', (_req, res) => res.send('ok'));
 
 // Meta'nın istediği gizlilik politikası sayfası
