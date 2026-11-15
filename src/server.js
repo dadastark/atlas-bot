@@ -21,6 +21,7 @@ const busy = new Map(); // aynı kişiden üst üste gelen mesajları sıraya ko
 
 // 2) Gelen mesajlar
 app.post('/webhook', (req, res) => {
+  console.log('webhook geldi:', JSON.stringify(req.body).slice(0, 400));
   if (!validSignature(req.rawBody, req.get('X-Hub-Signature-256'))) return res.sendStatus(401);
   res.sendStatus(200); // Meta'ya hemen cevap ver, yoksa tekrar dener
 
