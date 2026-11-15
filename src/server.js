@@ -31,14 +31,18 @@ app.post('/webhook', (req, res) => {
       if (seen.has(msg.id)) continue;
       seen.add(msg.id);
       if (seen.size > 5000) seen.clear();
-      handle(msg).catch((e) => console.error('işleme hatası', e));
+      handle(msg, ch.value.contacts || []).catch((e) => console.error('işleme hatası', e));
     }
   }
 });
 
-async function handle(msg) {
-  const phone = msg.from; // ör. 905415018100
-  const user = USERS[phone];
+async function handle(msg, contacts = []) {
+  // Meta kullanıcı adı olan kişilerde numara yerine BSUID (ör. TR.123...) gönderir
+  const c = contacts[0] || {};
+  const uname = String(c.profile?.username || c.username || '').replace(/^@/, '');
+  const phone = msg.from || msg.from_user_id || c.user_id;
+  const user = USERS[msg.from] || USERS[msg.from_user_id] || USERS[c.user_id] || (uname ? USERS['@' + uname] : undefined);
+  if (!user) console.log('tanimsiz kisi:', JSON.stringify({ from: msg.from, user_id: msg.from_user_id || c.user_id, username: uname }));
   markRead(msg.id);
 
   if (!user) {
