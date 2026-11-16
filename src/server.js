@@ -120,6 +120,25 @@ app.post('/grup', async (req, res) => {
   catch (e) { console.error('grup hatası', e); res.status(500).json({ reply: '' }); }
 });
 
+// Röle sayfası: WhatsApp Web'in güvenlik politikası dış sitelere istek atmayı engellediği için,
+// WhatsApp sekmesi bu sayfayı küçük bir pencerede açar ve postMessage ile konuşur.
+app.get('/relay', (_req, res) => res.type('html').send(`<!doctype html><meta charset="utf-8"><title>Atlas röle</title>
+<body style="font-family:system-ui;background:#0F1B2D;color:#fff;padding:16px"><b>Atlas röle açık</b> – bu pencereyi kapatmayın.<div id="s" style="color:#8FA3BF;margin-top:8px">bekleniyor…</div>
+<script>
+const s=document.getElementById('s');let n=0;
+window.addEventListener('message', async (e) => {
+  if (e.origin !== 'https://web.whatsapp.com' || !e.data || !e.data.atlas) return;
+  const { id, key, payload, ping } = e.data;
+  if (ping) { e.source.postMessage({ atlas: 1, id, pong: 1 }, e.origin); return; }
+  try {
+    const r = await fetch('/grup', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Atlas-Key': key }, body: JSON.stringify(payload) });
+    const j = await r.json();
+    e.source.postMessage({ atlas: 1, id, reply: j.reply || '' }, e.origin);
+    s.textContent = (++n) + ' mesaj işlendi · son: ' + new Date().toLocaleTimeString('tr-TR');
+  } catch (err) { e.source.postMessage({ atlas: 1, id, error: String(err) }, e.origin); s.textContent = 'hata: ' + err; }
+});
+</script>`));
+
 app.get('/health', (_req, res) => res.send('ok'));
 
 // Meta'nın istediği gizlilik politikası sayfası
