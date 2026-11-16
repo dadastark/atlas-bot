@@ -107,7 +107,23 @@ app.use('/grup', (req, res, next) => {
   next();
 });
 app.post('/grup', async (req, res) => {
-  const { gonderen = '', text = '', alinti = '' } = req.body || {};
+  const { gonderen = '', text = '', alinti = '', ozel = false, baslik = '' } = req.body || {};
+  if (ozel) {
+    // Özel sohbet (Atlas WhatsApp Web hattı): kişiyi sohbet başlığındaki numara veya @kullanıcı adıyla tanı
+    const b = String(baslik).trim();
+    const digits = b.replace(/\D/g, '');
+    const tr2 = (x) => String(x).toLocaleLowerCase('tr');
+    let u = (digits.length >= 10 && (USERS[digits] || USERS['90' + digits.slice(-10)])) || (b.startsWith('@') ? USERS[b] : undefined);
+    let guvenli = !!u;
+    if (!u) {
+      const isim = Object.values(USERS).find((x) => b && (tr2(b) === tr2(x.name) || tr2(b).startsWith(tr2(x.name) + ' ')));
+      if (isim) u = { ...isim, role: isim.role === 'admin' || isim.role === 'manager' ? 'agent' : isim.role };
+    }
+    if (!u) return res.json({ reply: 'Merhaba! Ben Atlas 👋 Bu hat 3M Digital ekibine özel. Erişim için Taha ile iletişime geçebilirsiniz.' });
+    try { res.json({ reply: await answer(u, 'ozel:' + b, String(text).slice(0, 3000)), guvenli }); }
+    catch (e) { console.error('ozel hatası', e); res.status(500).json({ reply: '' }); }
+    return;
+  }
   const ad = String(gonderen).replace(/^[~@\s]+/, '').toLowerCase();
   const tr = (x) => x.toLocaleLowerCase('tr');
   let user = Object.values(USERS).find((u) => ad && (tr(u.name) === tr(ad) || tr(ad).startsWith(tr(u.name)) || tr(ad).includes(tr(u.name))));
