@@ -98,6 +98,28 @@ app.use('/veri', (req, res, next) => {
 app.post('/veri', (req, res) => res.json(veriAl(req.body || {})));
 app.get('/veri/bekleyen', (_req, res) => res.json(bekleyenleriAl()));
 
+// Grup köprüsü: Taha'nın bilgisayarındaki WhatsApp Web sekmesi, grupta Atlas'a yazılan mesajı buraya yollar
+const grupSira = { p: Promise.resolve() };
+app.use('/grup', (req, res, next) => {
+  res.set({ 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Atlas-Key', 'Access-Control-Allow-Methods': 'POST, OPTIONS' });
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  if (!process.env.INGEST_KEY || req.get('X-Atlas-Key') !== process.env.INGEST_KEY) return res.sendStatus(403);
+  next();
+});
+app.post('/grup', async (req, res) => {
+  const { gonderen = '', text = '', alinti = '' } = req.body || {};
+  const ad = String(gonderen).replace(/^[~@\s]+/, '').toLowerCase();
+  const tr = (x) => x.toLocaleLowerCase('tr');
+  let user = Object.values(USERS).find((u) => ad && (tr(u.name) === tr(ad) || tr(ad).startsWith(tr(u.name)) || tr(ad).includes(tr(u.name))));
+  if (!user) user = { name: gonderen || 'Ekip üyesi', role: 'agent' };
+  const gUser = { ...user, role: user.role === 'admin' ? 'manager' : user.role };
+  const soru = (alinti ? `(Alıntıladığı mesaj: "${String(alinti).slice(0, 500)}")\n` : '') + String(text).slice(0, 2000);
+  const job = grupSira.p.then(() => answer(gUser, 'grup', `${user.name}: ${soru}`, true));
+  grupSira.p = job.catch(() => {});
+  try { res.json({ reply: await job }); }
+  catch (e) { console.error('grup hatası', e); res.status(500).json({ reply: '' }); }
+});
+
 app.get('/health', (_req, res) => res.send('ok'));
 
 // Meta'nın istediği gizlilik politikası sayfası
